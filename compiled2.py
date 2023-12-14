@@ -6,50 +6,101 @@ from pathlib import Path
 import tkinter.messagebox as messagebox
 from PIL import Image,ImageTk
 from random import*
-import mysql.connector
 from tkinter import ttk
 # Backend python functions code starts :
 def createtable():
-    conn=mysql.connector.connect(host="localhost",user="root",password="1234",database="bank")
+    conn=mysql.connector.connect(host="localhost",user="root",password="12345678",database="bank")
+    if conn.is_connected():
+            print("Connected to the database.")
+    else:
+        print("Failed to connect to the database.")
     cursor=conn.cursor()
-    cursor.execute("create table if not exists customer(name varchar(50),address varchar(50),email varchar(30),phone varchar(50),age int,password varchar(50),account varchar(30))")
-    conn.commit
+    cursor.execute("create table if not exists customer(name varchar(50),address varchar(50),email varchar(30),phone varchar(50),age int,password varchar(50),account varchar(30) primary key)")
+    conn.commit()
     conn.close()
     
 def deletecustomer(accountno):
-    conn=mysql.connector.connect(host="localhost",user="root",password="1234",database="bank")
+    conn=mysql.connector.connect(host="localhost",user="root",password="12345678",database="bank")
     cursor=conn.cursor()
     cursor.execute('delete from customer where account=?',(accountno))
     conn.commit()
     conn.close()
 def accountexist():
-    conn=mysql.connector.connect(host="localhost",user="root",password="1234",database="bank")
+    conn=mysql.connector.connect(host="localhost",user="root",password="12345678",database="bank")
     cursor=conn.cursor()
     cursor.execute("select count(*) from customer where account='"+entry1.get()+"'"+"and password='"+entry2.get()+"'")
     result=cursor.fetchone()
     conn.close()
     return result[0]>0
 
-    # frontend python functions code starts :
+# frontend python functions code starts :
 window=ctk.CTk()
 def welcome():
-    window.geometry("600x450+383+106")
+    window.geometry("600x490+383+120")
     window.title("Start Page")
-    window.config(bg='navy')
     ctk.set_appearance_mode("light")
+    window.config(bg="#1F43A0")
     ctk.set_default_color_theme("green")
     frame=ctk.CTkFrame(master=window,fg_color='yellow2')
-    frame.pack(pady=50,padx=80,fill="both",expand=True)
+    frame.pack(pady=60,padx=60,fill="both",expand=True)
     label1=ctk.CTkLabel(master=frame,text="Welcome To Our Bank",font=("TkHeadingFont",26))
-    label1.pack(pady=20,padx=40)
+    label1.pack(pady=20,padx=20)
     button1=ctk.CTkButton(master=frame,text="admin",command=adminlogin)
-    button1.pack(pady=20,padx=40)
+    button1.pack(pady=20,padx=20)
     button2=ctk.CTkButton(master=frame,text="customer",command=customerlogin)
-    button2.pack(pady=20,padx=40)
-    '''img=ImageTk.PhotoImage(Image.open("./images/bank1.png"))
+    button2.pack(pady=20,padx=20)
+    img=ImageTk.PhotoImage(Image.open("./DBMSPROJ/bank2.png"))
     label2=Label(image=img)
     label2.image=img
-    label2.pack(pady=20)'''
+    label2.pack(pady=1)
+
+def loanstatus():
+    global entryam
+    nw5=Toplevel(window)
+    nw5.geometry("500x300")
+    nw5.title("LOAN AMOUNT")
+    ctk.set_appearance_mode("light")
+    nw5.config(bg='blue4')
+    frameln=ctk.CTkFrame(master=nw5,width=100,height=100,corner_radius=15,fg_color='ivory2')
+    frameln.pack(pady=20,padx=40,fill="both",expand=True)
+    labelam=ctk.CTkLabel(master=frameln,text="Amount:",font=("Arial",18),text_color='black')
+    labelam.place(y=50,x=100)
+    entryam=ctk.CTkEntry(master=frameln,width=300,placeholder_text="Amount")
+    entryam.place(y=100,x=100)
+    buttonam=ctk.CTkButton(master=frameln,text="Request",command=reqloan)
+    buttonam.place(y=150,x=100)
+def reqloan():
+    amount=entryam.get()
+    if not(amount):
+        messagebox.showinfo('Error','Enter all fields')
+    elif(not(amount.isdigit())):
+        messagebox.showinfo('Error','Enter integer values only')
+   
+    else:
+        entryam.delete(0,'end')
+        conn=mysql.connector.connect(host="localhost",user="root",password="12345678",database="bank")
+        cursor=conn.cursor()
+        qry1="create table if not exists loanstatus (account varchar(30),amount int,status varchar(30))"
+        cursor.execute(qry1)
+        qry2="insert into loanstatus values(%s,%s,0)"
+        values=(account,int(amount),)
+        cursor.execute(qry2,values)
+        messagebox.showinfo("Loan status","Loan Request send successfully")
+        conn.commit()
+        cursor.close()
+        conn.close
+def deletestatus():
+    conn=mysql.connector.connect(host="localhost",user="root",password="12345678",database="bank")
+    cursor=conn.cursor()
+    qry1="create table if not exists deletestatus (account varchar(30),status varchar(30))"
+    cursor.execute(qry1)
+    qry2="insert into deletestatus values(%s,0)"
+    values=(account,)
+    cursor.execute(qry2,values)
+    messagebox.showinfo("Delete status","Delete Request send successfully")
+    conn.commit()
+    cursor.close()
+    conn.close
 
 def status():
     print("test")
@@ -71,14 +122,13 @@ def support():
         or
         email:customerhelp@gmail.com''',font=("Arial",20),text_color='black')
         actext.pack(pady=20,padx=40)
-        '''userimg=Image.open("./images/custserv.png")
+        userimg=Image.open("./DBMSPROJ/custserv.png")
         resized=userimg.resize((200,200),Image.ANTIALIAS)
         tk_image = ImageTk.PhotoImage(resized)
-       
         labeluser=tk.Label(framemsg,image=tk_image)
         labeluser.image=tk_image
         labeluser.place(x=150,y=200)
-        '''
+        
 def register():
     global a
     a=randint(100000000,999999999)
@@ -92,7 +142,7 @@ def register():
     if(name=="" or address=="" or email=="" or phone=="" or age=="" or password=="" ):
         messagebox.showinfo("Insert Status","All fields required")
     else:
-        conn=mysql.connector.connect(host="localhost",user="root",password="1234",database="bank")
+        conn=mysql.connector.connect(host="localhost",user="root",password="12345678",database="bank")
         cursor=conn.cursor()
         query = "INSERT INTO customer VALUES (%s, %s, %s, %s, %s, %s, %s)"
         values = (name, address, email, phone, age, password, account)
@@ -131,14 +181,11 @@ def register():
         label9=ctk.CTkLabel(master=framemsg,text=a,font=("TkHeading",26),text_color='black')
         label9.pack(pady=20,padx=40)
 def transaction():
-    # Backend+
+    # Backend
     # python functions code starts :
-    con=mysql.connector.connect(host="localhost",user="root",password="1234",database="bank")
+    con=mysql.connector.connect(host="localhost",user="root",password="12345678",database="bank")
     cur=con.cursor()
-    '''Query="Create database if not exists bank"
-    cur.execute(Query)
-    con.commit()'''
-    
+
     Query1="Create table if not exists transaction (accno integer primary key,balance integer);"
     cur.execute(Query1)
     con.commit()
@@ -167,10 +214,10 @@ def transaction():
     cur.execute(query3)
     data2=cur.fetchall()
     con.close()
-    def create_transaction_table():
-        con=mysql.connector.connect(host="localhost",user="root",password="1234",database="bank")
+    def create_transaction_table(accno):
+        con=mysql.connector.connect(host="localhost",user="root",password="12345678",database="bank")
         cur=con.cursor()
-        table_name = f"transaction_{account}"
+        table_name = f"transaction_{accno}"
         cur.execute(f"SHOW TABLES LIKE '{table_name}'")
         table_exists = cur.fetchall()
         if not table_exists:
@@ -186,21 +233,20 @@ def transaction():
             con.commit()
 
     for row in data2:
-        if not exists:
-            create_transaction_table(row[0])
+        create_transaction_table(row[0])
 
-    def fetchtransac(): 
+    def fetchtransac(accno): 
         cur=con.cursor()
-        table_name = f"transaction_{account}"
+        table_name = f"transaction_{accno}"
         cur.execute(f"SHOW TABLES LIKE '{table_name}'")
         table_exists = cur.fetchall()
         if table_exists:
-            cur.execute(f'select * from {table_name}')
+            cur.execute(f'select * from transaction_{accno}')
             transaccno=cur.fetchall()
             con.commit()
             return transaccno
 
-    con=mysql.connector.connect(host="localhost",user="root",password="1234",database="bank")
+    con=mysql.connector.connect(host="localhost",user="root",password="12345678",database="bank")
     cur=con.cursor()
     global bal
     x="select balance from transaction where accno=%s"
@@ -210,7 +256,7 @@ def transaction():
     
     #backend ends
     OUTPUT_PATH = Path(__file__).parent
-    ASSETS_PATH = OUTPUT_PATH / Path(r"C:\Users\alana\OneDrive\Desktop\dbms proj\Transactions\build1\assets\frame0")
+    ASSETS_PATH = OUTPUT_PATH / Path(r"./build1/assets/frame0")
 
     def relative_to_assets(path: str) -> Path:
         return ASSETS_PATH / Path(path)
@@ -224,7 +270,7 @@ def transaction():
     def deposit():
         global bal
         OUTPUT_PATH2 = Path(__file__).parent
-        ASSETS_PATH2 = OUTPUT_PATH2 / Path(r"C:\Users\alana\OneDrive\Desktop\dbms proj\Transactions\build2\assets\frame0")
+        ASSETS_PATH2 = OUTPUT_PATH2 / Path(r"./build2/assets/frame0")
 
         def relative_to_assets2(path: str) -> Path:
             return ASSETS_PATH2 / Path(path)
@@ -239,9 +285,6 @@ def transaction():
             try:
                 # Convert the string to a float
                 amount_to_deposit = float(entry_value)
-                insert_query = "INSERT INTO transaction_"+str(account)+ "  (credited, debited) VALUES (%s, %s)"
-                data = (amount_to_deposit, 0)
-                cur.execute(insert_query, data)
                 bal=bal+amount_to_deposit
                 q = f"UPDATE transaction SET balance = {bal} WHERE accno = '{account}'"
                 cur.execute(q)
@@ -388,7 +431,7 @@ def transaction():
     def withdraw():
         global bal
         OUTPUT_PATH3 = Path(__file__).parent
-        ASSETS_PATH3 = OUTPUT_PATH3 / Path(r"C:\Users\alana\OneDrive\Desktop\dbms proj\Transactions\build3\assets\frame0")
+        ASSETS_PATH3 = OUTPUT_PATH3 / Path(r"./build3/assets/frame0")
 
         def relative_to_assets3(path: str) -> Path:
             return ASSETS_PATH3 / Path(path)
@@ -404,9 +447,6 @@ def transaction():
                 amount_to_withdraw = float(entry_value)
                 try:
                     if(bal>amount_to_withdraw):
-                        insert_query = "INSERT INTO transaction_"+str(account)+ " (credited, debited) VALUES (%s, %s)"
-                        data = (0, amount_to_withdraw)
-                        cur.execute(insert_query, data)
                         bal=bal-amount_to_withdraw
                         q = f"UPDATE transaction SET balance = {bal} WHERE accno = '{account}'"
                         cur.execute(q)
@@ -464,6 +504,7 @@ def transaction():
             newindow,
             bd=0,
             bg="#AEC0FF",
+            fg="#000000",
             highlightthickness=0
         )
         entry_13.place(
@@ -553,10 +594,10 @@ def transaction():
 
     def transhis():
         OUTPUT_PATH4 = Path(__file__).parent
-        ASSETS_PATH4 = OUTPUT_PATH4 / Path(r"C:\Users\alana\OneDrive\Desktop\dbms proj\Transactions\build4\assets\frame0")
+        ASSETS_PATH4 = OUTPUT_PATH4 / Path(r"./build4/assets/frame0")
 
         table_columns = ["Transaction_id", "Credited", "Debited","TimeStamp"]
-        table_data = fetchtransac()
+        table_data = fetchtransac(account)
         newwindow = Toplevel(window)
         newwindow.geometry("900x650")
         newwindow.configure(bg = "#1F43A0")
@@ -653,7 +694,7 @@ def transaction():
         global bal
         global destination_account
         OUTPUT_PATH5 = Path(__file__).parent
-        ASSETS_PATH5 = OUTPUT_PATH5 / Path(r"C:\Users\alana\OneDrive\Desktop\dbms proj\Transactions\build5\assets\frame0")
+        ASSETS_PATH5 = OUTPUT_PATH5 / Path(r"./build5/assets/frame0")
 
         def relative_to_assets(path: str) -> Path:
             return ASSETS_PATH5 / Path(path)
@@ -667,47 +708,27 @@ def transaction():
             destination_account=entry_value
         def depbalance_update(entry_value):
             global bal
-            global destination_account
-
             try:
                 # Convert the string to a float
                 amount_to_transfer = float(entry_value)
-                cur.execute(f"SELECT 1 FROM transaction WHERE accno = '{destination_account}' LIMIT 1")
-                destination_account_exists = cur.fetchone()
-                if destination_account_exists:
-                    try:
-                        if(bal>amount_to_transfer and amount_to_transfer>0):
-                            insert_query = "INSERT INTO transaction_"+str(account)+ " (credited, debited) VALUES (%s, %s)"
-                            data = (0,amount_to_transfer)
-                            cur.execute(insert_query, data)
-                            insert_query2 = "INSERT INTO transaction_"+str(destination_account)+ " (credited, debited) VALUES (%s, %s)"
-                            data = (amount_to_transfer,0)
-                            cur.execute(insert_query2, data)
-                            bal=bal-amount_to_transfer
-                            q = f"UPDATE transaction SET balance = {bal} WHERE accno = '{account}'"
-                            cur.execute(q)
-                            con.commit()
-                            canvas.itemconfig(tagOrId=balance_label,text=bal)
-                            cur.execute(f"SELECT balance FROM transaction WHERE accno = '{destination_account}'")
-                            destination_balance_row = cur.fetchone()
-                            if destination_balance_row is not None:
-                                destination_balance = float(destination_balance_row[0])
-                                #destination_balance = float(cur.fetchone()[0])
-                                destination_balance += amount_to_transfer
-                                q2 = f"UPDATE transaction SET balance = {destination_balance} WHERE accno = '{destination_account}'"
-                                
-                                cur.execute(q2)
-                                con.commit()
-                            else:
-                                # Handle the case where the destination account does not exist
-                                messagebox.showinfo("Error", "Destination account not found.")
-                    except ValueError:
-                        messagebox.showinfo("Insufficient funds","Not enough balance.")
-                else:
-                    messagebox.showinfo("ERROR","Please Enter account number")
+                try:
+                    if(bal>amount_to_transfer and amount_to_transfer>0):
+                        bal=bal-amount_to_transfer
+                        q = f"UPDATE transaction SET balance = {bal} WHERE accno = '{account}'"
+                        cur.execute(q)
+                        con.commit()
+                        cur.execute(f"SELECT balance FROM transaction WHERE accno = '{destination_account}'")
+                        destination_balance = float(cur.fetchone()[0])
+                        destination_balance += amount_to_transfer
+                        q2 = f"UPDATE transaction SET balance = {destination_balance} WHERE accno = '{destination_account}'"
+                        cur.execute(q2)
+                        con.commit()
+                        canvas.itemconfig(tagOrId=balance_label,text=bal)
+                except ValueError:
+                    messagebox.showinfo("Insufficient funds","Not enough balance.")
             except ValueError:
                 messagebox.showinfo("Invalid input","Please enter a valid number.")
-                    #amount_to_deposit = float(entry_value)
+                #amount_to_deposit = float(entry_value)
         canvas = Canvas(
             newwwindow,
             bg = "#1F43A0",
@@ -804,7 +825,7 @@ def transaction():
             image=button_image_15,
             borderwidth=0,
             highlightthickness=0,
-            command=lambda:(newwwindow.withdraw(),update_balance_label()),
+            command=newwwindow.withdraw,
             relief="flat"
         )
         button_15.place(
@@ -867,7 +888,7 @@ def transaction():
             image=button_image_35,
             borderwidth=0,
             highlightthickness=0,
-            command=lambda:desaccno(entry_25.get()) ,
+            command=lambda:desaccno(entry_15.get()) ,
             relief="flat"
         )
 
@@ -885,7 +906,7 @@ def transaction():
             image=button_image_25,
             borderwidth=0,
             highlightthickness=0,
-            command=lambda:depbalance_update(entry_15.get()),
+            command=lambda:depbalance_update(entry_25.get()),
             relief="flat"
         )
         
@@ -899,11 +920,12 @@ def transaction():
         newwwindow.resizable(False, False)
         newwwindow.mainloop()
 
-    window.geometry("900x600")
-    window.configure(bg = "#1F43A0")
-    
+    window1 = Toplevel(window)
+    window1.title("Transfer")
+    window1.geometry("900x600")
+    window1.configure(bg = "#1F43A0")
     canvas = Canvas(
-    window,
+    window1,
     bg = "#1F43A0",
     height = 600,
     width = 900,
@@ -957,7 +979,7 @@ def transaction():
     button_image_1 = PhotoImage(
     file=relative_to_assets("button_1.png"))
     button_1 = Button(
-    window,
+    window1,
     image=button_image_1,
     borderwidth=0,
     highlightthickness=0,
@@ -982,10 +1004,11 @@ def transaction():
     button_image_2 = PhotoImage(
     file=relative_to_assets("button_2.png"))
     button_2 = Button(
+    window1,
     image=button_image_2,
     borderwidth=0,
     highlightthickness=0,
-    command=window.withdraw,
+    command=window1.withdraw,
     relief="flat"
     )
     button_2.place(
@@ -998,6 +1021,7 @@ def transaction():
     button_image_3 = PhotoImage(
     file=relative_to_assets("button_3.png"))
     button_3 = Button(
+    window1,
     image=button_image_3,
     borderwidth=0,
     highlightthickness=0,
@@ -1014,6 +1038,7 @@ def transaction():
     button_image_4 = PhotoImage(
     file=relative_to_assets("button_4.png"))
     button_4 = Button(
+    window1,
     image=button_image_4,
     borderwidth=0,
     highlightthickness=0,
@@ -1030,6 +1055,7 @@ def transaction():
     button_image_5 = PhotoImage(
     file=relative_to_assets("button_5.png"))
     button_5 = Button(
+    window1,
     image=button_image_5,
     borderwidth=0,
     highlightthickness=0,
@@ -1066,11 +1092,11 @@ def transaction():
     fill="#000000",
     font=("Inter Bold", 26 * -1)
     )
-    window.resizable(False, False)
-    window.mainloop()
+    window1.resizable(False, False)
+    window1.mainloop()
         
 def menupg():
-    conn=mysql.connector.connect(host="localhost",user="root",password="1234",database="bank")
+    conn=mysql.connector.connect(host="localhost",user="root",password="12345678",database="bank")
     cursor=conn.cursor()
     newindow2=Toplevel(window)
     newindow2.geometry("1500x650")
@@ -1084,12 +1110,12 @@ def menupg():
     label7.pack(pady=20,padx=40)
     def back():
         newindow2.withdraw()
-    '''userimg=Image.open("./images/user1.png")
+    userimg=Image.open("./DBMSPROJ/user1.png")
     resized=userimg.resize((200,200),Image.ANTIALIAS)
     tk_image = ImageTk.PhotoImage(resized)
     labeluser=tk.Label(frame3,image=tk_image)
     labeluser.image=tk_image
-    labeluser.place(x=20,y=30)'''
+    labeluser.place(x=20,y=30)
     cursor.execute("select * from customer")
     rows=cursor.fetchall()
     for row in rows:
@@ -1102,17 +1128,17 @@ def menupg():
             labelemail.place(y=340,x=40)
             label8=ctk.CTkLabel(master=frame3,text="Account number:"+account,font=("Arial",18),text_color='black')
             label8.place(y=370,x=40)
-        
+       
     button8=ctk.CTkButton(master=frame3,text="Transactions",command=transaction,height=100,width=300)
     button8.place(y=100,x=600)
-    button9=ctk.CTkButton(master=frame3,text="Loan ",command=status,height=100,width=100)
+    button9=ctk.CTkButton(master=frame3,text="Loan Request ",command=loanstatus,height=100,width=100)
     button9.place(y=250,x=600)
-    button10=ctk.CTkButton(master=frame3,text="Request Account Deletion",command=delete,height=100)
+    button10=ctk.CTkButton(master=frame3,text="Request Account Deletion",command=deletestatus,height=100)
     button10.place(y=250,x=730)
     buttonexit=ctk.CTkButton(master=frame3,text="Exit",command=back,height=50,width=100)
-    buttonexit.place(y=450,x=650)
+    buttonexit.place(y=450,x=600)
     button11=ctk.CTkButton(master=frame3,text="Customer Support",command=support,height=50,width=100)
-    button11.place(y=450,x=800)
+    button11.place(y=450,x=750)
     
 def clogin():
     global account,password
@@ -1147,14 +1173,24 @@ def csign():
     frame2.pack(pady=0,padx=0,fill="both",expand=True)
     label6=ctk.CTkLabel(master=frame2,text="Customer Registeration",font=("Helvetica",26),text_color='black')
     label6.pack(pady=20,padx=10)
+    labelname=ctk.CTkLabel(master=frame2,text="Name:",font=("Arial",18),text_color='black')
+    labelname.place(y=85,x=190)
     entry3=ctk.CTkEntry(master=frame2,width=300,placeholder_text="FullName")
-    entry3.pack(pady=20,padx=15)
+    entry3.pack(pady=20,padx=10)
+    labelad=ctk.CTkLabel(master=frame2,text="Address:",font=("Arial",18),text_color='black')
+    labelad.place(y=155,x=190)
     entry4=ctk.CTkEntry(master=frame2,width=220,placeholder_text="Address")
     entry4.pack(pady=20,padx=15)
+    labelem=ctk.CTkLabel(master=frame2,text="Email:",font=("Arial",18),text_color='black')
+    labelem.place(y=225,x=190)
     entry5=ctk.CTkEntry(master=frame2,width=220,placeholder_text="Email")
     entry5.pack(pady=20,padx=15)
+    labelph=ctk.CTkLabel(master=frame2,text="Phoneno:",font=("Arial",18),text_color='black')
+    labelph.place(y=295,x=190)
     entry6=ctk.CTkEntry(master=frame2,width=220,placeholder_text="Mobilenumber")
     entry6.pack(pady=20,padx=15)
+    labelag=ctk.CTkLabel(master=frame2,text="Age:",font=("Arial",18),text_color='black')
+    labelag.place(y=365,x=190)
     entry7=ctk.CTkEntry(master=frame2,width=220,placeholder_text="Age")
     entry7.pack(pady=20,padx=15)
     label6=ctk.CTkLabel(master=frame2,text="Create Password:",font=("Helvetica",16),text_color='black')
@@ -1167,14 +1203,13 @@ def csign():
     button6.pack(pady=20,padx=15)
     buttonback=ctk.CTkButton(master=frame2,text="Back",command=back)
     buttonback.pack(pady=20,padx=15)
+    userimg=Image.open("./images/cust1.png")
+    resized=userimg.resize((200,200),Image.ANTIALIAS)
+    tk_image = ImageTk.PhotoImage(resized)
+    labelcust=tk.Label(frame2,image=tk_image)
+    labelcust.image=tk_image
+    labelcust.place(x=660,y=30)
 
-    '''
-    img2=ImageTk.PhotoImage(Image.open("./images/cust1.png"))
-    label5=Label(image=img2)
-    label5=ctk.CTkLabel(newindow1,image=img2,text="")
-    label5.image=img2
-    label5.place(x=0.5,y=0.5)
-    '''
 def adminlogin():
     print("Test")
 def customerlogin():
@@ -1189,15 +1224,14 @@ def customerlogin():
     def show():
         if entry2.cget('show')=='*':
             entry2.configure(show='')
-
         else:
             entry2.configure(show='*')
     frame1=ctk.CTkFrame(master=newindow,width=600,height=600,corner_radius=15,fg_color='light goldenrod')
     frame1.pack(pady=0,padx=0,fill="both",expand=True)
-    '''img1=ImageTk.PhotoImage(Image.open("./images/adminLogin1.png"))
+    img1=ImageTk.PhotoImage(Image.open("./DBMSPROJ/adminLogin1.png"))
     label4=tk.Label(newindow,image=img1)
     label4.image=img1
-    label4.pack(pady=0,padx=0)'''
+    label4.pack(pady=0,padx=0)
     label3=ctk.CTkLabel(master=frame1,text="Customer Login",font=("TkHeading",26),text_color='black')
     label3.pack(pady=45,padx=50)
     entry1=ctk.CTkEntry(master=frame1,width=220,placeholder_text="AccountNumber")
